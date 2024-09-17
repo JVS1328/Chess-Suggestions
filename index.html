@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Web App</title>
+    <!-- jQuery (installed via npm) -->
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <!-- chessboard.js styles (manually downloaded) -->
+    <link rel="stylesheet" href="css/chessboard.css">
+    <!-- chessboard.js (manually downloaded) -->
+    <script src="js/chessboard.js"></script>
+    <script type="module">
+        import { Chess } from './node_modules/chess.js/dist/esm/chess.js';
+        import './js/script.js';  // Load your custom script
+    </script>
+</head>
+<body>
+    <h1>Chess Suggestion 2.0</h1>    
+
+    <div id="board" style="width: 400px;"></div> <!-- Chessboard Div -->
+    
+    <div>
+        <label for="thinkingTime">Think time (seconds):</label>
+        <input type="range" id="thinkingTime" min="1" max="30" value="5">
+        <span id="thinkingTimeValue">5</span> seconds
+    </div>
+    
+    <!-- Add these styles in your HTML file for highlighting -->
+    <style>
+    .highlight {
+      background-color: rgba(255, 255, 0, 0.6);  /* Yellow with transparency */
+    }
+    </style>
+
+    <!-- Game Controls -->
+    <button id="undoButton">Undo</button>
+    <button id="flipButton">Flip Board</button>
+    <button id="resetButton">Restart Game</button>
+
+    <!-- FEN Input -->
+    <input type="text" id="fenInput" placeholder="Enter FEN">
+    <button id="loadFENButton">Load FEN</button>
+
+    <!-- Game Status and Suggestions -->
+    <p id="status">Status: Ready</p>
+    <p id="suggestion">Suggested Move: </p>
+
+    
+</body>
+</html>
