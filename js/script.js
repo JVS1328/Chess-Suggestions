@@ -99,6 +99,7 @@ function suggestBestMove() {
 let isPlayerWhite = true; //default
 let thinkingTime = 5;  // Default thinking time in seconds
 
+
 function updateThinkingTime(value) {
     thinkingTime = value;
     document.getElementById('thinkingTimeValue').textContent = value;
@@ -168,10 +169,17 @@ function undoMove() {
 
 // Flip the board orientation
 function flipBoard() {
-    board.flip();
-    isPlayerWhite = !isPlayerWhite;  // Toggle player's color
-    updateStatus();
+    board.flip();  // Flip the chessboard orientation
+    isPlayerWhite = !isPlayerWhite;  // Toggle player's color (White/Black)
     clearHighlights();  // Clear highlights when flipping the board
+
+    // Check if it's the player's turn after flipping
+    if ((isPlayerWhite && game.turn() === 'w') || (!isPlayerWhite && game.turn() === 'b')) {
+        suggestBestMove();  // Suggest the best move for the player
+    } else {
+        document.getElementById('suggestion').textContent = "Waiting for opponent's move.";
+    }
+    updateStatus();
 }
 
 // Reset the game to the starting position
