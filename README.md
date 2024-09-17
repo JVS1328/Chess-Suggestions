@@ -1,4 +1,4 @@
-Chess Suggestion python script.
+Chess Suggestion web-app
 
 Load FEN inputs, basic command-line input that uses stockfish 16.1 for chess calculations.
 Undo Commands, restart, quit, etc.
