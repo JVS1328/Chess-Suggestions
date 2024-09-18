@@ -23,10 +23,11 @@ function handleMove(source, target, piece, newPos, oldPos, orientation) {
     try {
         // Only allow drop if the piece is moved to a new square
         if (source !== target) {
+            var promotionPiece = detectPawnPromotion(source, target);
             var move = game.move({
                 from: source,
                 to: target,
-                promotion: 'q'  // Automatically promote to queen for now
+                promotion: promotionPiece || undefined
             });
 
             // If the move is invalid, snap the piece back
@@ -37,13 +38,69 @@ function handleMove(source, target, piece, newPos, oldPos, orientation) {
                 return 'snapback';  // Snap piece back to original square
             } else {
                 // If valid, update the game state and suggest the best move
+                if (promotionPiece){
+                    //updatePromotedPiece(target, promotionPiece);
+                }
                 updateStatus();
                 suggestBestMove();  // Call Stockfish to get the best move
             }
+            board.position(game.fen(), false); // update board
         }
     } catch (error) {
+        console.error(error);
         return 'snapback';  // Snap the piece back if any error occurs
     }
+}
+
+// Detect whether the move is a pawn promotion
+function detectPawnPromotion(source, targetSquare) {
+    // Use game.get() to retrieve information about the piece at the source square
+    const piece = game.get(source);
+
+    // Check if there is a piece and if it is a pawn ('p')
+    if (!piece || piece.type !== 'p') {
+        return null;  // Not a pawn, so no promotion is possible
+    }
+
+    // Check if the pawn is moving to the promotion rank (8 for white, 1 for black)
+    const targetRank = targetSquare.charAt(1);
+    const isWhitePawnPromotion = piece.color === 'w' && targetRank === '8';
+    const isBlackPawnPromotion = piece.color === 'b' && targetRank === '1';
+
+    if (isWhitePawnPromotion || isBlackPawnPromotion) {
+        // Prompt the user for the promotion piece (q = Queen, r = Rook, b = Bishop, n = Knight)
+        let promotionPiece = prompt('Promote to (q = Queen, r = Rook, b = Bishop, n = Knight):', 'q');
+
+        // Ensure the promotion choice is valid
+        if (!['q', 'r', 'b', 'n'].includes(promotionPiece)) {
+            promotionPiece = 'q';  // Default to Queen if invalid input
+        }
+
+        return promotionPiece;  // Return the promotion piece ('q', 'r', 'b', 'n')
+    }
+
+    return null;  // No promotion needed
+}
+
+// Update the board to show the promoted piece's icon
+function updatePromotedPiece(targetSquare, promotionPiece) {
+    const newPosition = board.position();  // Get the current board position
+
+    // Determine which piece to place on the target square
+    let newPiece = '';
+    const currentTurn = game.turn() === 'w' ? 'b' : 'w'; // After move, turn changes
+    if (currentTurn === 'w') {
+        newPiece = 'w' + promotionPiece;  // White piece
+    } else {
+        newPiece = 'b' + promotionPiece;  // Black piece
+    }
+
+    // Update the board's position with the promoted piece
+    newPosition[targetSquare] = newPiece;
+
+    // Update the board to reflect the new piece
+    board.position(newPosition, false);  // false ensures that pieces don't snap
+    
 }
 
 // Called when a piece is dropped
