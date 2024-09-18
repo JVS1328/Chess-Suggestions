@@ -1,5 +1,5 @@
 // Import the Chess class from the ESM version of chess.js
-import { Chess } from '../node_modules/chess.js/dist/esm/chess.js';
+import { Chess } from '../js/chess.js';
 
 // Initialize the chess.js game
 var game = new Chess();
