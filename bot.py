@@ -1,8 +1,10 @@
 import chess
 import chess.engine
+import os 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Define the path to your Stockfish engine
-STOCKFISH_PATH = "C:/Users/johnn/Documents/Chess Program/stockfish/stockfish.exe"
+STOCKFISH_PATH = dir_path + "/stockfish/stockfish.exe"
 
 
 class ChessGame:
