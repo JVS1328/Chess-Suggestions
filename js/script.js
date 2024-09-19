@@ -222,6 +222,11 @@ function undoMove() {
     board.position(game.fen());  // Update the board to reflect the new position
     updateStatus();  // Update the game status
     clearHighlights();
+    if ((isPlayerWhite && game.turn() === 'w') || (!isPlayerWhite && game.turn() === 'b')) {
+        suggestBestMove();  // Suggest the best move for the player
+    } else {
+        document.getElementById('suggestion').textContent = "Waiting for opponent's move.";
+    }
 }
 
 // Flip the board orientation
@@ -243,7 +248,8 @@ function flipBoard() {
 function resetGame() {
     game.reset();
     board.start();
-    isPlayerWhite = true;  // Reset to White by default
+    if (!isPlayerWhite)
+        flipBoard(); // Reset to white by default
     clearHighlights();  // Clear all highlights
     updateStatus();  // Update the game status
 
