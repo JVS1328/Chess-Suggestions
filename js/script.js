@@ -5,6 +5,28 @@ import { Chess } from '../js/chess.js';
 var game = new Chess();
 var stockfish = new Worker('js/stockfish.js');
 
+// for mobile
+document.addEventListener('touchstart', function(event) {
+    if (event.target.closest('.square-55d63')) {
+        // Prevent default behavior when touching the chessboard (prevents scrolling)
+        event.preventDefault();
+    }
+}, { passive: false });
+
+document.addEventListener('touchmove', function(event) {
+    if (event.target.closest('.square-55d63')) {
+        // Prevent default behavior during touchmove (prevents page from moving)
+        event.preventDefault();
+    }
+}, { passive: false });
+
+document.addEventListener('touchend', function(event) {
+    if (event.target.closest('.square-55d63')) {
+        // Prevent default behavior after releasing the piece
+        event.preventDefault();
+    }
+}, { passive: false });
+
 // Handle any Stockfish errors
 stockfish.onerror = function(error) {
     console.error('Error in Stockfish worker:', error);
