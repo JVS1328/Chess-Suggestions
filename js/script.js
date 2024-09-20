@@ -155,24 +155,52 @@ var board = Chessboard('board', {
 // Function to suggest the best move using Stockfish
 function suggestBestMove() {
     const fen = game.fen();  // Get the FEN string from the current board
-    const depth = calculateDepthFromTime(thinkingTime);  // Get depth based on thinking time
+    const isHUmanized = document.getElementById('humanizeToggle').checked;
+    var depth = calculateDepthFromTime(thinkingTime);  // Get depth based on thinking time
+    if ((isPlayerWhite && game.turn() === 'w') || (!isPlayerWhite && game.turn() === 'b')){
+        if (isHUmanized){
+            // For "humanized" mode, use a random depth based on depth from thinking time
+            //const randomAdjustment = Math.floor(Math.random() * 3) - 1; // random adjustment of -1, -, +1 for variability
+            //depth = Math.max(depth + randomAdjustment, 2) // depth at least at 2 to avoid shallow depth
 
-    // Check if it's the player's turn based on the player's color
-    if ((isPlayerWhite && game.turn() === 'w') || (!isPlayerWhite && game.turn() === 'b')) {
-        stockfish.postMessage('position fen ' + fen);
-        stockfish.postMessage(`go depth ${depth}`);  // Use the calculated depth
+            // Randomized Depth between a floor depth (1) and ceiling depth (8)
+            depth = Math.floor(Math.random() * (8 - 1 + 1)) + 1;
+            console.log("Randomized Depth for Humanizing.." + depth)
 
-        stockfish.onmessage = function(event) {
-            const message = event.data;
-            if (message.includes('bestmove')) {
-                const bestMove = message.split(' ')[1];
-                highlightMove(bestMove);  // Highlight the best move on the board
-                document.getElementById('suggestion').textContent = 'Suggested Move: ' + bestMove;
-            }
-        };
-    } else {
+            stockfish.postMessage(`position fen ${fen}`);
+            stockfish.postMessage(`go depth ${depth}`);
+
+            stockfish.onmessage = function(event) {
+                const message = event.data;
+                if (message.includes('bestmove')) {
+                    const bestMove = message.split(' ')[1];  // Get the best move
+                    highlightMove(bestMove);  // Highlight the best move on the board
+                    document.getElementById('suggestion').textContent = 'Suggested Move: ' + bestMove;
+                }
+            };
+        }
+        else{
+            console.log("Normalized Depth with current thinking time: " + depth)
+            // Non-Humanized, auto-best move.
+            stockfish.postMessage('position fen ' + fen);
+            stockfish.postMessage(`go depth ${depth}`);  // Use the calculated depth
+
+            stockfish.onmessage = function(event) {
+                const message = event.data;
+                if (message.includes('bestmove')) {
+                    const bestMove = message.split(' ')[1];
+                    highlightMove(bestMove);  // Highlight the best move on the board
+                    document.getElementById('suggestion').textContent = 'Suggested Move: ' + bestMove;
+                }
+            };
+        }
+    }
+    else{
         document.getElementById('suggestion').textContent = 'Waiting for opponent\'s move';
     }
+    
+
+    
 }
 
 let isPlayerWhite = true; //default
@@ -185,7 +213,17 @@ function updateThinkingTime(value) {
 }
 
 function calculateDepthFromTime(timeInSeconds) {
-    return Math.min(Math.floor(timeInSeconds * 2), 30);  // Example correlation: 2x time
+    const baseDepth = 2;  // A reasonable starting point for very short times + human
+    const scalingFactor = 3.5;  // Controls how quickly the depth increases with time
+
+    // Use a logarithmic approach to compute depth based on thinking time
+    let depth = Math.floor(baseDepth + Math.log(thinkingTime + 1) * scalingFactor);  // Logarithmic scaling
+
+    // Cap the depth to ensure it doesn't grow too large
+    const maxDepth = 30;  // You can adjust this based on performance
+    depth = Math.min(depth, maxDepth);
+
+    return depth;
 }
 
 // Function to highlight the suggested move on the board
