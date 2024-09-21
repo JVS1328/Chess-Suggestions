@@ -171,7 +171,9 @@ function suggestBestMove() {
     const fen = game.fen();  // Get the FEN string from the current board
     const isHUmanized = document.getElementById('humanizeToggle').checked;
     var depth = calculateDepthFromTime(thinkingTime);  // Get depth based on thinking time
+    
     if ((isPlayerWhite && game.turn() === 'w') || (!isPlayerWhite && game.turn() === 'b')){
+        console.log("Thinking Time: " + thinkingTime);
         if (isHUmanized){
             // For "humanized" mode, use a random depth based on depth from thinking time
             //const randomAdjustment = Math.floor(Math.random() * 3) - 1; // random adjustment of -1, -, +1 for variability
@@ -179,8 +181,9 @@ function suggestBestMove() {
 
             // Randomized Depth between a floor depth (1) and ceiling depth (depth)
             depth = Math.floor(Math.random() * (depth - 1 + 1)) + 1;
-            console.log("Randomized Depth for Humanizing.." + depth)
+            console.log("Randomized Depth for Humanizing.." + depth);
             let multiPVCount = document.getElementById('mutliPVInput').value;
+            console.log("MultiPV Count: " + multiPVCount);
             stockfish.postMessage('setoption name MultiPV value ' + multiPVCount);
             let moveOptions = [];
 
