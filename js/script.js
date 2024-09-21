@@ -152,6 +152,20 @@ var board = Chessboard('board', {
     onDrop: handleDrop  // Handle when a piece is dropped
 });
 
+// Function to validate if a move string represents a valid move in chess
+function isValidMove(move, game) {
+    if (!move || move.length !== 4) return false; // Ensure move is exactly 4 characters (source and target)
+
+    const source = move.substring(0, 2);
+    const target = move.substring(2, 4);
+
+    // Try to make the move in a clone of the game to check if it's legal
+    let testGame = new Chess(game.fen()); // Clone the current game state
+    const result = testGame.move({ from: source, to: target, promotion: 'q' }); // Assume promotion to queen for simplicity
+
+    return result !== null; // If the move is legal, result will be a move object, not null
+}
+
 // Function to suggest the best move using Stockfish
 function suggestBestMove() {
     const fen = game.fen();  // Get the FEN string from the current board
@@ -163,19 +177,43 @@ function suggestBestMove() {
             //const randomAdjustment = Math.floor(Math.random() * 3) - 1; // random adjustment of -1, -, +1 for variability
             //depth = Math.max(depth + randomAdjustment, 2) // depth at least at 2 to avoid shallow depth
 
-            // Randomized Depth between a floor depth (1) and ceiling depth (8)
-            depth = Math.floor(Math.random() * (8 - 1 + 1)) + 1;
+            // Randomized Depth between a floor depth (1) and ceiling depth (depth)
+            depth = Math.floor(Math.random() * (depth - 1 + 1)) + 1;
             console.log("Randomized Depth for Humanizing.." + depth)
+            const multiPVCount = 3;
+            stockfish.postMessage('setoption name MultiPV value ' + multiPVCount);
+            let moveOptions = [];
 
             stockfish.postMessage(`position fen ${fen}`);
             stockfish.postMessage(`go depth ${depth}`);
 
             stockfish.onmessage = function(event) {
                 const message = event.data;
+                // Parse Stockfish's output to get multiple move options from Multi-PV
+                if (message.startsWith('info') && message.includes(' pv ')) {
+                    const pvLine = message.split(' pv ')[1].trim().split(' ');
+
+                    // Collect valid moves from the PV line (each PV line corresponds to one variation)
+                    const move = (pvLine[0] + pvLine[1]).substring(0, 4);  // Grab the first 4 characters only
+
+                    console.log(move);
+                    if (moveOptions.length <= multiPVCount && !moveOptions.includes(move) && isValidMove(move, game)) {
+                        moveOptions.push(move);  // Add the move if it's valid and not already in the list
+                    }
+                }
                 if (message.includes('bestmove')) {
-                    const bestMove = message.split(' ')[1];  // Get the best move
-                    highlightMove(bestMove);  // Highlight the best move on the board
-                    document.getElementById('suggestion').textContent = 'Suggested Move: ' + bestMove;
+                    let suggestionText = 'Suggested Moves: ';
+                    for (let i = 0; i < moveOptions.length; i++){
+                        console.log(moveOptions);
+                        suggestionText += `${moveOptions[i]} `;
+
+                        // First move is always yellow, subsequent moves get random colors
+                        let color = (i === 0) ? 'rgba(255, 255, 0, 0.5)' : getRandomColor(); //modify this later to incorporate piece tracking
+                        highlightMove(moveOptions[i], color);
+                    }
+                    //const bestMove = message.split(' ')[1];  // Get the best move
+                    //highlightMove(bestMove);  // Highlight the best move on the board
+                    document.getElementById('suggestion').textContent = suggestionText.trim();
                 }
             };
         }
@@ -206,6 +244,14 @@ function suggestBestMove() {
 let isPlayerWhite = true; //default
 let thinkingTime = 5;  // Default thinking time in seconds
 
+// Function to generate a random rgba color
+function getRandomColor() {
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+    const a = 0.5; // Set transparency
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
 
 function updateThinkingTime(value) {
     thinkingTime = value;
@@ -227,26 +273,26 @@ function calculateDepthFromTime(timeInSeconds) {
 }
 
 // Function to highlight the suggested move on the board
-function highlightMove(bestMove) {
-    clearHighlights();  // Always clear previous highlights
+function highlightMove(bestMove, color = 'rgba(255, 255, 0, 0.5)') {
+    //clearHighlights();  // Always clear previous highlights
     const from = bestMove.slice(0, 2);  // Extract 'from' square
     const to = bestMove.slice(2, 4);    // Extract 'to' square
-    addHighlight(from);
-    addHighlight(to);
+    addHighlight(from, color);
+    addHighlight(to, color);
 }
 
 // Function to add highlight to a specific square
-function addHighlight(square) {
+function addHighlight(square, color) {
     const squareElement = document.querySelector(`.square-${square}`);
     if (squareElement) {
-        squareElement.classList.add('highlight');
+        squareElement.style.backgroundColor = color;
     }
 }
 
 // Function to clear all highlights
 function clearHighlights() {
-    document.querySelectorAll('.highlight').forEach(el => {
-        el.classList.remove('highlight');
+    document.querySelectorAll('[data-square]').forEach(square => {
+        square.style.backgroundColor = ''; //clear color
     });
 }
 
