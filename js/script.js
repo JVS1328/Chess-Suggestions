@@ -207,8 +207,17 @@ function suggestBestMove() {
                         console.log(moveOptions);
                         suggestionText += `${moveOptions[i]} `;
 
-                        // First move is always yellow, subsequent moves get random colors
-                        let color = (i === 0) ? 'rgba(255, 255, 0, 0.5)' : getRandomColor(); //modify this later to incorporate piece tracking
+                        const fromSquare = moveOptions[i].slice(0,2); // Get the piece's starting square
+
+                        // If this piece already has a color, use it; Otherwise, generate a new color
+                        let color;
+                        if (pieceColorMap[fromSquare]) {
+                            color = pieceColorMap[fromSquare];
+                        }
+                        else{
+                            color = (i === 0) ? 'rgba(255, 255, 0, 0.5)' : getRandomColor(); //Generate new color for a new piece / default yellow
+                            pieceColorMap[fromSquare] = color; // Store the color for the piece
+                        }
                         highlightMove(moveOptions[i], color);
                     }
                     //const bestMove = message.split(' ')[1];  // Get the best move
@@ -243,6 +252,8 @@ function suggestBestMove() {
 
 let isPlayerWhite = true; //default
 let thinkingTime = 5;  // Default thinking time in seconds
+
+let pieceColorMap = {};
 
 // Function to generate a random rgba color
 function getRandomColor() {
@@ -291,6 +302,9 @@ function addHighlight(square, color) {
 
 // Function to clear all highlights
 function clearHighlights() {
+    // Reset pieceColorMap
+    pieceColorMap = {};
+    // Clear highlighted squares
     document.querySelectorAll('[data-square]').forEach(square => {
         square.style.backgroundColor = ''; //clear color
     });
