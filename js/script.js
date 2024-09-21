@@ -180,7 +180,7 @@ function suggestBestMove() {
             // Randomized Depth between a floor depth (1) and ceiling depth (depth)
             depth = Math.floor(Math.random() * (depth - 1 + 1)) + 1;
             console.log("Randomized Depth for Humanizing.." + depth)
-            const multiPVCount = 3;
+            let multiPVCount = document.getElementById('mutliPVInput').value;
             stockfish.postMessage('setoption name MultiPV value ' + multiPVCount);
             let moveOptions = [];
 
