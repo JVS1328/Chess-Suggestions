@@ -300,7 +300,7 @@ function calculateDepthFromTime(timeInSeconds) {
         return Math.min(baseDepth + Math.floor(Math.pow(timeInSeconds * 0.5, 1.2)), 15);
     }
     else{
-        return Math.min(baseDepth + Math.floor(scalingFactor * Math.log(timeInSeconds)), 40);
+        return Math.min(baseDepth + Math.floor(scalingFactor * Math.log(timeInSeconds + 1)), 40);
     }
 
     // Use a logarithmic approach to compute depth based on thinking time
