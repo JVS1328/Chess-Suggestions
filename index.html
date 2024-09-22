@@ -17,13 +17,38 @@
     <h1>Chess Suggestion 2.0</h1>    
 
     <div id="board" style="width: 400px;"></div> <!-- Chessboard Div -->
-    
+
     <div>
+        <label for="toggleMode">Use Thinking Time:</label>
+        <input type="checkbox" id="toggleMode" checked>
+
+        <label for="humanizeToggle">Humanize Suggestions:</label>
+        <input type="checkbox" id="humanizeToggle">
+
+        <div id="randomizeDepthContainer" style="display : none;">
+            <label for="randomizeDepth">Randomize Depth:</label>
+            <input type="checkbox" id="randomizeDepth">
+        </div>
+
+    </div>
+
+    <!-- Manual Depth Input (Visible when "Use Thinking Time" is disabled) -->
+    <div id="manualDepthContainer" style="display: none;">
+        <label for="manualDepth">Manual Depth:</label>
+        <input type="number" id="manualDepth" value="8" min="1" step="1">
+    </div>
+    
+    <div id="thinkingTimeContainer">
         <label for="thinkingTime">Think time (seconds):</label>
         <input type="range" id="thinkingTime" min="1" max="30" value="5">
         <span id="thinkingTimeValue">5</span> seconds
     </div>
-    
+
+    <div>
+        <label for="multiPVInput">Number of MultiPV Moves: </label>
+        <input type="number" id="mutliPVInput" value="3" min="1" max="10" step="1">
+    </div>
+
     <!-- Add these styles in your HTML file for highlighting -->
     <style>
     .highlight {
@@ -31,21 +56,18 @@
     }
     </style>
 
-    <!-- Game Controls -->
-    <button id="undoButton">Undo</button>
-    <button id="flipButton">Flip Board</button>
-    <button id="resetButton">Restart Game</button>
-    <label for="humanizeToggle">Humanize Suggestions</label>
-    <input type="checkbox" id="humanizeToggle">
     <div>
-        <label for="multiPVInput">Number of MultiPV Moves: </label>
-        <input type="number" id="mutliPVInput" value="3" min="1" max="10" step="1">
+        <!-- Game Controls -->
+        <button id="undoButton">Undo</button>
+        <button id="flipButton">Flip Board</button>
+        <button id="resetButton">Restart Game</button>
     </div>
-
-
-    <!-- FEN Input -->
-    <input type="text" id="fenInput" placeholder="Enter FEN">
-    <button id="loadFENButton">Load FEN</button>
+    
+    <div>
+        <!-- FEN Input -->
+        <input type="text" id="fenInput" placeholder="Enter FEN">
+        <button id="loadFENButton">Load FEN</button>
+    </div>
 
     <!-- Game Status and Suggestions -->
     <p id="status">Status: Ready</p>

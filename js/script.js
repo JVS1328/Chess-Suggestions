@@ -35,6 +35,8 @@ stockfish.onerror = function(error) {
 // Track the original square when a piece is picked up
 let originalSquare = null;
 
+let useThinkingTime = true; // default uses thinking time
+
 // Called when a piece is picked up
 function handleDragStart(source, piece, position, orientation) {
     originalSquare = source;  // Store the original square
@@ -166,22 +168,41 @@ function isValidMove(move, game) {
     return result !== null; // If the move is legal, result will be a move object, not null
 }
 
+let isHumanized = false; //default
+let randomizeDepth = true; //default
+
 // Function to suggest the best move using Stockfish
 function suggestBestMove() {
     const fen = game.fen();  // Get the FEN string from the current board
-    const isHUmanized = document.getElementById('humanizeToggle').checked;
-    var depth = calculateDepthFromTime(thinkingTime);  // Get depth based on thinking time
+    isHumanized = document.getElementById('humanizeToggle').checked;
+    randomizeDepth = document.getElementById('randomizeDepth').checked;
+    if (useThinkingTime) {
+        var depth = calculateDepthFromTime(thinkingTime);  // Get depth based on thinking time 
+    }
+    else{
+        var depth = document.getElementById('manualDepth').value;
+    }
     
     if ((isPlayerWhite && game.turn() === 'w') || (!isPlayerWhite && game.turn() === 'b')){
-        console.log("Thinking Time: " + thinkingTime);
-        if (isHUmanized){
+        if (useThinkingTime){
+           console.log("Thinking Time: " + thinkingTime); 
+           console.log("Depth from thinking time: " + depth);
+        }
+        else{
+            console.log("Manual Depth: " + depth);
+        }
+        
+        if (isHumanized){
             // For "humanized" mode, use a random depth based on depth from thinking time
             //const randomAdjustment = Math.floor(Math.random() * 3) - 1; // random adjustment of -1, -, +1 for variability
             //depth = Math.max(depth + randomAdjustment, 2) // depth at least at 2 to avoid shallow depth
 
-            // Randomized Depth between a floor depth (1) and ceiling depth (depth)
-            depth = Math.floor(Math.random() * (depth - 1 + 1)) + 1;
-            console.log("Randomized Depth for Humanizing.." + depth);
+            if (randomizeDepth){
+                // Randomized Depth between a floor depth (1) and ceiling depth (depth)
+                depth = Math.floor(Math.random() * (depth - 1 + 1)) + 1;
+                console.log("Randomized Depth for Humanizing.." + depth);
+            }
+            
             let multiPVCount = document.getElementById('mutliPVInput').value;
             console.log("MultiPV Count: " + multiPVCount);
             stockfish.postMessage('setoption name MultiPV value ' + multiPVCount);
@@ -230,7 +251,6 @@ function suggestBestMove() {
             };
         }
         else{
-            console.log("Normalized Depth with current thinking time: " + depth)
             // Non-Humanized, auto-best move.
             stockfish.postMessage('position fen ' + fen);
             stockfish.postMessage(`go depth ${depth}`);  // Use the calculated depth
@@ -254,7 +274,7 @@ function suggestBestMove() {
 }
 
 let isPlayerWhite = true; //default
-let thinkingTime = 5;  // Default thinking time in seconds
+let thinkingTime = document.getElementById('thinkingTime').value;  // Default thinking time in seconds
 
 let pieceColorMap = {};
 
@@ -273,11 +293,18 @@ function updateThinkingTime(value) {
 }
 
 function calculateDepthFromTime(timeInSeconds) {
-    const baseDepth = 2;  // A reasonable starting point for very short times + human
-    const scalingFactor = 3.5;  // Controls how quickly the depth increases with time
+    const baseDepth = 1;  // A reasonable starting point for very short times + human
+    const scalingFactor = 2.5;  // Controls how quickly the depth increases with time
+
+    if (timeInSeconds <= 10){
+        return Math.min(baseDepth + Math.floor(Math.pow(timeInSeconds * 0.5, 1.2)), 15);
+    }
+    else{
+        return Math.min(baseDepth + Math.floor(scalingFactor * Math.log(timeInSeconds)), 40);
+    }
 
     // Use a logarithmic approach to compute depth based on thinking time
-    let depth = Math.floor(baseDepth + Math.log(thinkingTime + 1) * scalingFactor);  // Logarithmic scaling
+    let depth = Math.floor(baseDepth + Math.log(timeInSeconds + 1) * scalingFactor);  // Logarithmic scaling
 
     // Cap the depth to ensure it doesn't grow too large
     const maxDepth = 30;  // You can adjust this based on performance
@@ -393,6 +420,22 @@ document.addEventListener('DOMContentLoaded', function() {
         thinkingTime = slider.value;
         timeDisplay.textContent = thinkingTime;
     })
+
+    document.getElementById('toggleMode').addEventListener('change', function() {
+        useThinkingTime = this.checked;
+
+        document.getElementById('thinkingTimeContainer').style.display = useThinkingTime ? 'block' : 'none';
+        document.getElementById('manualDepthContainer').style.display = useThinkingTime ? 'none' : 'block';
+
+    })
+
+    document.getElementById('humanizeToggle').addEventListener('change', function(){
+        isHumanized = this.checked;
+
+        document.getElementById('randomizeDepthContainer').style.display = isHumanized ? 'block' : 'none';
+
+    });
+
 });
 
 // Load a position from a FEN string
