@@ -208,63 +208,79 @@ function suggestBestMove() {
             console.log("Manual Depth: " + depth);
         }
         
-        if (isHumanized){
-            // For "humanized" mode, use a random depth based on depth from thinking time
-            //const randomAdjustment = Math.floor(Math.random() * 3) - 1; // random adjustment of -1, -, +1 for variability
-            //depth = Math.max(depth + randomAdjustment, 2) // depth at least at 2 to avoid shallow depth
-
-            if (randomizeDepth){
+        if (isHumanized) {
+            if (randomizeDepth) {
                 depth = getRandomizedDepth(depth);
                 console.log("Localized Randomized Depth for Humanizing:", depth);
             }
-            
-            let multiPVCount = document.getElementById('mutliPVInput').value;
-            console.log("MultiPV Count: " + multiPVCount);
+
+            let multiPVCount = parseInt(document.getElementById('mutliPVInput').value);
             stockfish.postMessage('setoption name MultiPV value ' + multiPVCount);
-            let moveOptions = [];
+
+            let moveCandidates = [];
 
             stockfish.postMessage(`position fen ${fen}`);
             stockfish.postMessage(`go depth ${depth}`);
 
             stockfish.onmessage = function(event) {
                 const message = event.data;
-                // Parse Stockfish's output to get multiple move options from Multi-PV
-                if (message.startsWith('info') && message.includes(' pv ')) {
-                    const pvLine = message.split(' pv ')[1].trim().split(' ');
 
-                    // Collect valid moves from the PV line (each PV line corresponds to one variation)
-                    const move = (pvLine[0] + pvLine[1]).substring(0, 4);  // Grab the first 4 characters only
+                // Parse engine info for multi-PV output
+                if (message.startsWith('info') && message.includes('multipv') && message.includes(' pv ')) {
+                    const parts = message.split(' ');
+                    const multiPVIndex = parts.indexOf('multipv');
+                    const scoreIndex = parts.indexOf('cp');
+                    if (multiPVIndex !== -1 && scoreIndex !== -1) {
+                        const rank = parseInt(parts[multiPVIndex + 1]);
+                        const evalScore = parseInt(parts[scoreIndex + 1]);
+                        const pvLine = message.split(' pv ')[1].trim().split(' ');
+                        const move = pvLine[0]; // Used to be (pvLine[0] + pvLine[1]).substring(0, 4);
 
-                    console.log(move);
-                    if (moveOptions.length <= multiPVCount && !moveOptions.includes(move) && isValidMove(move, game)) {
-                        moveOptions.push(move);  // Add the move if it's valid and not already in the list
+                        // Add small evaluation noise ONLY in humanized mode
+                        const noise = (Math.random() - 0.5) * 100; // ±50 centipawns typical
+                        const noisyEval = evalScore + noise;
+
+                        if (isValidMove(move, game) && !moveOptions.includes(move)) {
+                            moveCandidates.push({ move, score: noisyEval, rank });
+                        }
                     }
                 }
+
+                // When best move line arrives
                 if (message.includes('bestmove')) {
+                    if (moveCandidates.length === 0) return;
+
+                    // Sort by noisy score (so the “wrong” move sometimes looks better)
+                    moveCandidates.sort((a, b) => b.score - a.score);
+
+                    // 75 % of the time pick top move; 25 % pick from top 3
+                    let selectedMove = moveCandidates[0].move;
+                    if (Math.random() < 0.25 && moveCandidates.length > 1) {
+                        const altIndex = Math.floor(Math.random() * Math.min(3, moveCandidates.length));
+                        selectedMove = moveCandidates[altIndex].move;
+                    }
+
+                    // Highlight all suggested moves with colors
                     let suggestionText = 'Suggested Moves: ';
-                    for (let i = 0; i < moveOptions.length; i++){
-                        console.log(moveOptions);
-                        suggestionText += `${moveOptions[i]} `;
-
-                        const fromSquare = moveOptions[i].slice(0,2); // Get the piece's starting square
-
-                        // If this piece already has a color, use it; Otherwise, generate a new color
+                    for (let i = 0; i < moveCandidates.length; i++) {
+                        const fromSquare = moveCandidates[i].move.slice(0, 2);
                         let color;
                         if (pieceColorMap[fromSquare]) {
                             color = pieceColorMap[fromSquare];
+                        } else {
+                            color = (i === 0) ? 'rgba(255,255,0,0.5)' : getRandomColor();
+                            pieceColorMap[fromSquare] = color;
                         }
-                        else{
-                            color = (i === 0) ? 'rgba(255, 255, 0, 0.5)' : getRandomColor(); //Generate new color for a new piece / default yellow
-                            pieceColorMap[fromSquare] = color; // Store the color for the piece
-                        }
-                        highlightMove(moveOptions[i], color);
+                        highlightMove(moveCandidates[i].move, color);
+                        suggestionText += moveCandidates[i].move + ' ';
                     }
-                    //const bestMove = message.split(' ')[1];  // Get the best move
-                    //highlightMove(bestMove);  // Highlight the best move on the board
-                    document.getElementById('suggestion').textContent = suggestionText.trim();
+
+                    document.getElementById('suggestion').textContent =
+                        'Humanized Move: ' + selectedMove + ' | ' + suggestionText.trim();
                 }
             };
         }
+
         else{
             // Non-Humanized, auto-best move.
             stockfish.postMessage('position fen ' + fen);
