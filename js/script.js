@@ -168,6 +168,22 @@ function isValidMove(move, game) {
     return result !== null; // If the move is legal, result will be a move object, not null
 }
 
+function getRandomizedDepth(baseDepth) {
+    let variance = 2, minDepth = 2, maxDepth = 30;
+    // Box–Muller transform to generate approximately normal distribution
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    let gaussian = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+
+    // Center around baseDepth
+    let depth = Math.round(baseDepth + gaussian * variance);
+
+    // Clamp to safe bounds
+    return Math.max(minDepth, Math.min(maxDepth, depth));
+}
+
+
 let isHumanized = false; //default
 let randomizeDepth = true; //default
 
@@ -198,9 +214,8 @@ function suggestBestMove() {
             //depth = Math.max(depth + randomAdjustment, 2) // depth at least at 2 to avoid shallow depth
 
             if (randomizeDepth){
-                // Randomized Depth between a floor depth (1) and ceiling depth (depth)
-                depth = Math.floor(Math.random() * (depth - 1 + 1)) + 1;
-                console.log("Randomized Depth for Humanizing.." + depth);
+                depth = getRandomizedDepth(depth);
+                console.log("Localized Randomized Depth for Humanizing:", depth);
             }
             
             let multiPVCount = document.getElementById('mutliPVInput').value;
