@@ -234,13 +234,13 @@ function suggestBestMove() {
                         const rank = parseInt(parts[multiPVIndex + 1]);
                         const evalScore = parseInt(parts[scoreIndex + 1]);
                         const pvLine = message.split(' pv ')[1].trim().split(' ');
-                        const move = pvLine[0]; // Used to be (pvLine[0] + pvLine[1]).substring(0, 4);
+                        const move = (pvLine[0] + pvLine[1]).substring(0, 4);
 
                         // Add small evaluation noise ONLY in humanized mode
                         const noise = (Math.random() - 0.5) * 100; // ±50 centipawns typical
                         const noisyEval = evalScore + noise;
 
-                        if (isValidMove(move, game) && !moveOptions.includes(move)) {
+                        if (isValidMove(move, game) && !moveCandidates.includes(move)) {
                             moveCandidates.push({ move, score: noisyEval, rank });
                         }
                     }
